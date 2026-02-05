@@ -12,12 +12,28 @@ import (
 func RenderTree(repo *stack.Repo) string {
 	var sb strings.Builder
 
-	sb.WriteString(TrunkStyle.Render(repo.Trunk))
-	sb.WriteString("\n")
+	// Group roots by parent
+	groups := make(map[string][]*stack.Branch)
+	var parentOrder []string
+	for _, root := range repo.Stacks {
+		if _, seen := groups[root.Parent]; !seen {
+			parentOrder = append(parentOrder, root.Parent)
+		}
+		groups[root.Parent] = append(groups[root.Parent], root)
+	}
 
-	for i, root := range repo.Stacks {
-		isLast := i == len(repo.Stacks)-1
-		renderBranch(&sb, root, repo, "", isLast)
+	for gi, parent := range parentOrder {
+		if gi > 0 {
+			sb.WriteString("\n")
+		}
+		sb.WriteString(TrunkStyle.Render(parent))
+		sb.WriteString("\n")
+
+		roots := groups[parent]
+		for i, root := range roots {
+			isLast := i == len(roots)-1
+			renderBranch(&sb, root, repo, "", isLast)
+		}
 	}
 
 	return sb.String()

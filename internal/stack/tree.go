@@ -23,9 +23,10 @@ func BuildTree(repo *Repo) {
 		})
 	}
 
-	// Find stack roots (branches whose parent is trunk)
+	// Find stack roots (branches whose parent is not a tracked branch)
 	for _, branch := range repo.Branches {
-		if branch.Parent == repo.Trunk {
+		_, parentTracked := repo.Branches[branch.Parent]
+		if !parentTracked {
 			repo.Stacks = append(repo.Stacks, branch)
 		}
 	}
@@ -54,7 +55,7 @@ func CurrentStack(repo *Repo) *Branch {
 	for b.Parent != repo.Trunk {
 		parent, ok := repo.Branches[b.Parent]
 		if !ok {
-			return nil
+			return b
 		}
 		b = parent
 	}
@@ -167,7 +168,7 @@ func NavigateDown(repo *Repo, n int) (string, error) {
 		}
 		parent, ok := repo.Branches[target.Parent]
 		if !ok {
-			return "", fmt.Errorf("parent branch %s not found", target.Parent)
+			return "", fmt.Errorf("already at the bottom of the stack")
 		}
 		target = parent
 	}
